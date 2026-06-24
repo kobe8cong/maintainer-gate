@@ -1,0 +1,13 @@
+{
+  "title": "Improve auth and billing flows",
+  "body": "This PR updates auth files, billing files, and database files. It changes code and modifies logic in multiple places.",
+  "author": "contributor123",
+  "number": 42,
+  "files": [
+    { "filename": "src/auth/session.ts", "additions": 180, "deletions": 40 },
+    { "filename": "src/billing/checkout.ts", "additions": 240, "deletions": 80 },
+    { "filename": "prisma/migrations/20260624000000_change_accounts.sql", "additions": 90, "deletions": 10 },
+    { "filename": ".github/workflows/deploy.yml", "additions": 60, "deletions": 25 },
+    { "filename": "src/api/users.ts", "additions": 120, "deletions": 30 }
+  ]
+}

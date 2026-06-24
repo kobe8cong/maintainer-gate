@@ -1,0 +1,9 @@
+{
+  "title": "Fix typo in configuration docs",
+  "body": "Fixes #12. This corrects a typo in the configuration guide. No runtime code changes are included, and no tests are required because the change is documentation-only.",
+  "author": "docs-helper",
+  "number": 43,
+  "files": [
+    { "filename": "docs/configuration.md", "additions": 2, "deletions": 2 }
+  ]
+}

@@ -1,0 +1,25 @@
+name: Policy example
+description: Share an AI contribution policy or maintainer intake workflow.
+title: "[Policy]: "
+labels: ["policy", "examples", "needs-triage"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Project context
+      description: What kind of project or maintainer workflow is this for?
+    validations:
+      required: true
+  - type: textarea
+    id: policy
+    attributes:
+      label: Policy or workflow
+      description: Paste the relevant policy, template, or workflow excerpt.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What changed?
+      description: Did it reduce low-context PRs, improve review speed, or create friction?

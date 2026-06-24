@@ -1,0 +1,7 @@
+{
+  "requireLinkedIssue": true,
+  "requireAiDisclosure": false,
+  "maxChangedFiles": 18,
+  "maxChangedLines": 600,
+  "failOn": "high"
+}

@@ -1,0 +1,25 @@
+name: "Maintainer Gate"
+description: "A no-drama PR intake gate for maintainers handling AI-assisted open-source contributions."
+author: "Maintainer Gate contributors"
+inputs:
+  fail-on:
+    description: "Fail the workflow at this severity: low, medium, high, or critical."
+    required: false
+    default: "high"
+  format:
+    description: "Report format: table, markdown, or json."
+    required: false
+    default: "markdown"
+  token:
+    description: "GitHub token used to fetch changed files for pull_request events."
+    required: false
+  comment:
+    description: "Post or update a sticky Maintainer Gate comment on the pull request."
+    required: false
+    default: "false"
+runs:
+  using: "node20"
+  main: "bin/maintainer-gate.js"
+branding:
+  icon: "shield"
+  color: "blue"

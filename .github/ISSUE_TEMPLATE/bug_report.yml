@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a crash, incorrect finding, or GitHub Action problem.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the command or workflow and the unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Minimal redacted PR input
+      description: Paste the smallest safe PR JSON, workflow snippet, or file list that reproduces the issue.
+      render: json
+  - type: input
+    id: version
+    attributes:
+      label: Maintainer Gate version
+      placeholder: "0.1.0"
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      placeholder: "node --version"

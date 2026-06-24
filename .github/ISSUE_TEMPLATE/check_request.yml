@@ -1,0 +1,35 @@
+name: Intake check request
+description: Suggest a new PR intake check.
+title: "[Check]: "
+labels: ["check-request", "needs-triage"]
+body:
+  - type: textarea
+    id: maintainer-problem
+    attributes:
+      label: Maintainer problem
+      description: What repeated PR review problem should this catch?
+    validations:
+      required: true
+  - type: textarea
+    id: risky-example
+    attributes:
+      label: PR example that should trigger
+      description: Include a minimal redacted title, body, and file list.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: safe-example
+    attributes:
+      label: PR example that should not trigger
+      description: Describe the false-positive boundary.
+      render: markdown
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Suggested severity
+      options:
+        - critical
+        - high
+        - medium
+        - low

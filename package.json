@@ -1,0 +1,55 @@
+{
+  "name": "maintainer-gate",
+  "version": "0.1.0",
+  "description": "A no-drama PR intake gate for maintainers handling AI-assisted open-source contributions.",
+  "type": "module",
+  "bin": {
+    "maintainer-gate": "./bin/maintainer-gate.js"
+  },
+  "scripts": {
+    "test": "node test/run-tests.js",
+    "ci": "npm test && node bin/maintainer-gate.js --input examples/risky-pr.json --format markdown --fail-on critical",
+    "scan:example": "node bin/maintainer-gate.js --input examples/risky-pr.json",
+    "scan:json": "node bin/maintainer-gate.js --input examples/risky-pr.json --format json",
+    "scan:markdown": "node bin/maintainer-gate.js --input examples/risky-pr.json --format markdown",
+    "pack:dry-run": "npm pack --dry-run",
+    "prepublishOnly": "npm run ci"
+  },
+  "keywords": [
+    "github-actions",
+    "pull-requests",
+    "open-source",
+    "maintainers",
+    "ai-code",
+    "ai-policy",
+    "pr-review",
+    "triage"
+  ],
+  "author": "",
+  "license": "MIT",
+  "homepage": "https://github.com/kobe8cong/maintainer-gate#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kobe8cong/maintainer-gate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kobe8cong/maintainer-gate/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "action.yml",
+    "bin",
+    "docs",
+    "examples",
+    "src",
+    "README.md",
+    "ROADMAP.md",
+    "MAINTAINERS.md",
+    "CODE_OF_CONDUCT.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    ".maintainer-gate.example.json"
+  ]
+}
