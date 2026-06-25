@@ -29,6 +29,25 @@ const cleanReport = evaluatePullRequest(clean);
 assert.equal(cleanReport.recommendation, "ready-for-review");
 assert.equal(cleanReport.findingCount, 0);
 
+const conciseDocsPr = {
+  title: "Fix README typo",
+  body: "Fixes #18. Corrects a README typo.",
+  files: [{ filename: "README.md", additions: 1, deletions: 1 }],
+};
+const conciseDocsReport = evaluatePullRequest(conciseDocsPr);
+assert.equal(conciseDocsReport.findingCount, 0);
+
+const vagueCodePr = {
+  title: "Update auth logic",
+  body: "Fixes #19. Updates code.",
+  files: [{ filename: "src/auth/session.ts", additions: 20, deletions: 4 }],
+};
+const vagueCodeReport = evaluatePullRequest(vagueCodePr);
+assert.equal(
+  vagueCodeReport.findings.some((finding) => finding.id === "intake.weak-description"),
+  true,
+);
+
 const disclosureReport = evaluatePullRequest(clean, { requireAiDisclosure: true });
 assert.equal(disclosureReport.findings.some((finding) => finding.id === "policy.ai-disclosure"), true);
 
