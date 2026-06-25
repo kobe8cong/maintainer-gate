@@ -2,6 +2,12 @@
 
 All notable changes to Maintainer Gate will be documented in this file.
 
+## [0.1.1] - Unreleased
+
+### Changed
+
+- Reduce weak-description false positives for small, issue-linked documentation-only pull requests.
+
 ## [0.1.0] - 2026-06-24
 
 ### Added

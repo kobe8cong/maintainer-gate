@@ -94,11 +94,7 @@ function normalizeFiles(files) {
 
 function linkedIssueRule(pr, policy) {
   if (!policy.requireLinkedIssue) return null;
-  const text = `${pr.title}\n${pr.body}`;
-  const hasLinkedIssue =
-    /\b(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?|related to)\s+#\d+\b/i.test(text) ||
-    /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+/i.test(text);
-  if (hasLinkedIssue) return null;
+  if (hasLinkedIssue(pr)) return null;
   return finding({
     id: "intake.linked-issue",
     severity: "medium",
@@ -129,6 +125,7 @@ function aiDisclosureRule(pr, policy) {
 
 function descriptionQualityRule(pr, policy) {
   const body = pr.body.trim();
+  if (isLowRiskContextPr(pr, body)) return null;
   if (body.length >= policy.minBodyLength && !looksLikeDiffNarration(body)) return null;
   return finding({
     id: "intake.weak-description",
@@ -257,6 +254,24 @@ function recommendationFor(counts) {
 
 function finding({ id, severity, title, message, evidence, checklist }) {
   return { id, severity, title, message, evidence, checklist };
+}
+
+function hasLinkedIssue(pr) {
+  const text = `${pr.title}\n${pr.body}`;
+  return (
+    /\b(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?|related to)\s+#\d+\b/i.test(text) ||
+    /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+/i.test(text)
+  );
+}
+
+function isLowRiskContextPr(pr, body) {
+  if (!body || !hasLinkedIssue(pr)) return false;
+  if (!hasOnlyDocs(pr.files)) return false;
+  if (pr.changedFiles > 3) return false;
+  if (pr.additions + pr.deletions > 80) return false;
+  return /\b(docs?|documentation|typo|readme|changelog|spelling|copy|comment)\b/i.test(
+    `${pr.title}\n${body}`,
+  );
 }
 
 function hasTestChanges(files) {
