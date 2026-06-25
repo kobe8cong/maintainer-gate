@@ -2,7 +2,7 @@
 
 All notable changes to Maintainer Gate will be documented in this file.
 
-## [0.1.1] - Unreleased
+## [0.1.1] - 2026-06-25
 
 ### Changed
 

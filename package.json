@@ -1,6 +1,6 @@
 {
   "name": "maintainer-gate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A no-drama PR intake gate for maintainers handling AI-assisted open-source contributions.",
   "type": "module",
   "bin": {

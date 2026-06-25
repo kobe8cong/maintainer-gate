@@ -6,7 +6,7 @@ import { formatReport } from "./reporters.js";
 export async function runCli(argv) {
   const options = parseArgs(argv);
   if (options.version) {
-    process.stdout.write("0.1.0\n");
+    process.stdout.write("0.1.1\n");
     return;
   }
   if (options.help) {
