@@ -13,6 +13,7 @@ Maintainer Gate: needs-maintainer-triage
 Readiness: 0/100
 Changed: 5 files, 690 additions, 185 deletions
 Critical 0 | High 2 | Medium 3 | Low 1
+Suggested labels: `needs-context`, `large-pr`, `sensitive-paths`, `missing-tests`, `missing-docs`
 ```
 
 ## Why This Exists
@@ -30,6 +31,8 @@ Maintainer Gate helps projects set a calm, explicit intake bar before deep revie
 - Production code changes without tests.
 - User-facing configuration changes without docs.
 - Optional AI assistance disclosure policy.
+
+Reports also include suggested issue labels such as `needs-context`, `large-pr`, `sensitive-paths`, `missing-tests`, `missing-docs`, and `ai-disclosure`. Maintainer Gate only reports these labels; it does not apply labels to GitHub pull requests.
 
 ## Usage
 

@@ -2,6 +2,13 @@
 
 All notable changes to Maintainer Gate will be documented in this file.
 
+## [0.1.2] - 2026-06-27
+
+### Added
+
+- Add suggested labels to JSON, Markdown, and table reports.
+- Document rule-to-label mappings for maintainer triage workflows.
+
 ## [0.1.1] - 2026-06-25
 
 ### Changed

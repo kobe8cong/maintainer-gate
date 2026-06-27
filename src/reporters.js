@@ -11,6 +11,7 @@ function table(report) {
     `PR: ${report.pullRequest.title || "(untitled)"}`,
     `Changed: ${report.pullRequest.changedFiles} files, ${report.pullRequest.additions} additions, ${report.pullRequest.deletions} deletions`,
     `Critical ${report.counts.critical} | High ${report.counts.high} | Medium ${report.counts.medium} | Low ${report.counts.low}`,
+    `Suggested labels: ${formatLabels(report.suggestedLabels)}`,
   ];
 
   if (report.findings.length === 0) {
@@ -37,6 +38,8 @@ function markdown(report) {
     `Readiness: **${report.readiness}/100**`,
     "",
     `Changed: **${report.pullRequest.changedFiles}** files, **${report.pullRequest.additions}** additions, **${report.pullRequest.deletions}** deletions.`,
+    "",
+    `Suggested labels: ${formatLabels(report.suggestedLabels)}`,
     "",
     "| Severity | Count |",
     "| --- | ---: |",
@@ -71,4 +74,9 @@ function markdown(report) {
     lines.push(`- [ ] ${item}`);
   }
   return `${lines.join("\n")}\n`;
+}
+
+function formatLabels(labels = []) {
+  if (labels.length === 0) return "none";
+  return labels.map((label) => `\`${label}\``).join(", ");
 }

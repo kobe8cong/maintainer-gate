@@ -38,6 +38,7 @@ jobs:
 - If `GITHUB_TOKEN` is available, it fetches PR file metadata from the GitHub API.
 - Markdown output is appended to the job summary.
 - If `comment: true`, a sticky PR comment is created or updated.
+- Reports include suggested labels for maintainer triage, but the action does not apply labels.
 - The workflow exits non-zero when findings meet the `fail-on` threshold.
 
 ## Recommended Rollout

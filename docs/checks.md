@@ -4,6 +4,20 @@ Maintainer Gate checks whether a pull request has enough context to deserve deep
 
 It does not claim to detect AI-generated code. Each check is about maintainer workflow risk.
 
+## Suggested Labels
+
+Reports include `suggestedLabels`, a conservative list of labels maintainers can apply manually or wire into later automation. Maintainer Gate does not change GitHub labels by itself.
+
+| Rule | Suggested label |
+| --- | --- |
+| `intake.linked-issue` | `needs-context` |
+| `intake.weak-description` | `needs-context` |
+| `intake.large-pr` | `large-pr` |
+| `risk.sensitive-paths` | `sensitive-paths` |
+| `quality.missing-tests` | `missing-tests` |
+| `quality.missing-docs` | `missing-docs` |
+| `policy.ai-disclosure` | `ai-disclosure` |
+
 ## `intake.linked-issue`
 
 Severity: `medium`
