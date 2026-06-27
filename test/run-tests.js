@@ -17,6 +17,12 @@ assert.equal(riskyReport.recommendation, "needs-maintainer-triage");
 assert.equal(riskyReport.findings.some((finding) => finding.id === "intake.linked-issue"), true);
 assert.equal(riskyReport.findings.some((finding) => finding.id === "risk.sensitive-paths"), true);
 assert.equal(riskyReport.findings.some((finding) => finding.id === "quality.missing-tests"), true);
+assert.deepEqual(riskyReport.suggestedLabels, [
+  "needs-context",
+  "large-pr",
+  "sensitive-paths",
+  "missing-tests",
+]);
 
 const clean = {
   title: "Fix docs typo",
@@ -28,6 +34,7 @@ const clean = {
 const cleanReport = evaluatePullRequest(clean);
 assert.equal(cleanReport.recommendation, "ready-for-review");
 assert.equal(cleanReport.findingCount, 0);
+assert.deepEqual(cleanReport.suggestedLabels, []);
 
 const conciseDocsPr = {
   title: "Fix README typo",
@@ -50,10 +57,14 @@ assert.equal(
 
 const disclosureReport = evaluatePullRequest(clean, { requireAiDisclosure: true });
 assert.equal(disclosureReport.findings.some((finding) => finding.id === "policy.ai-disclosure"), true);
+assert.equal(disclosureReport.suggestedLabels.includes("ai-disclosure"), true);
 
 assert.match(formatReport(riskyReport, "table"), /Maintainer Gate/);
+assert.match(formatReport(riskyReport, "table"), /Suggested labels: `needs-context`/);
 assert.match(formatReport(riskyReport, "markdown"), /Review Checklist/);
+assert.match(formatReport(riskyReport, "markdown"), /Suggested labels: `needs-context`/);
 assert.doesNotThrow(() => JSON.parse(formatReport(riskyReport, "json")));
+assert.deepEqual(JSON.parse(formatReport(riskyReport, "json")).suggestedLabels, riskyReport.suggestedLabels);
 assert.match(buildPullRequestComment(riskyReport), /<!-- maintainer-gate-report -->/);
 assert.match(buildPullRequestComment(riskyReport), /Maintainer Gate Report/);
 

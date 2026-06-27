@@ -37,6 +37,16 @@ export const defaultPolicy = {
   ],
 };
 
+export const findingLabels = {
+  "intake.linked-issue": "needs-context",
+  "intake.weak-description": "needs-context",
+  "intake.large-pr": "large-pr",
+  "risk.sensitive-paths": "sensitive-paths",
+  "quality.missing-tests": "missing-tests",
+  "quality.missing-docs": "missing-docs",
+  "policy.ai-disclosure": "ai-disclosure",
+};
+
 export function evaluatePullRequest(input, policy = {}) {
   const mergedPolicy = mergePolicy(policy);
   const normalized = normalizePullRequest(input);
@@ -219,7 +229,7 @@ function summarize(pr, policy, findings) {
   const recommendation = recommendationFor(counts);
   return {
     tool: "maintainer-gate",
-    version: "0.1.1",
+    version: "0.1.2",
     recommendation,
     readiness,
     policy: {
@@ -239,9 +249,14 @@ function summarize(pr, policy, findings) {
     },
     counts,
     findingCount: findings.length,
+    suggestedLabels: suggestedLabelsFor(findings),
     findings,
     checklist: findings.map((item) => item.checklist),
   };
+}
+
+function suggestedLabelsFor(findings) {
+  return [...new Set(findings.map((item) => findingLabels[item.id]).filter(Boolean))];
 }
 
 function recommendationFor(counts) {
