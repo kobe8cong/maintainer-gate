@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { evaluatePullRequest } from "../src/rules.js";
 import { formatReport } from "../src/reporters.js";
-import { buildPullRequestComment, parseArgs } from "../src/cli.js";
+import { buildPullRequestComment, initPolicyFiles, parseArgs } from "../src/cli.js";
 
 const risky = {
   title: "Improve auth and billing",
@@ -69,6 +72,38 @@ assert.match(buildPullRequestComment(riskyReport), /<!-- maintainer-gate-report 
 assert.match(buildPullRequestComment(riskyReport), /Maintainer Gate Report/);
 
 assert.equal(parseArgs(["--input", "pr.json", "--format", "json"]).format, "json");
+assert.equal(parseArgs(["policy", "init"]).command, "policy-init");
+assert.equal(parseArgs(["policy", "init", "--force"]).force, true);
 assert.throws(() => parseArgs(["--format", "xml"]), /format must be/);
+
+const originalCwd = process.cwd();
+const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "maintainer-gate-policy-"));
+try {
+  process.chdir(tempDir);
+  const initResult = await initPolicyFiles();
+  assert.deepEqual(initResult.files, [
+    ".maintainer-gate.json",
+    "AI_POLICY.md",
+    path.join(".github", "PULL_REQUEST_TEMPLATE.md"),
+  ]);
+  const policy = JSON.parse(await fs.readFile(".maintainer-gate.json", "utf8"));
+  assert.equal(policy.requireLinkedIssue, true);
+  assert.equal(policy.maxChangedLines, 600);
+  assert.match(await fs.readFile("AI_POLICY.md", "utf8"), /AI Contribution Policy/);
+  assert.match(
+    await fs.readFile(path.join(".github", "PULL_REQUEST_TEMPLATE.md"), "utf8"),
+    /AI Assistance/,
+  );
+
+  await fs.writeFile("AI_POLICY.md", "keep me", "utf8");
+  await assert.rejects(() => initPolicyFiles(), /would overwrite existing file/);
+  assert.equal(await fs.readFile("AI_POLICY.md", "utf8"), "keep me");
+
+  await initPolicyFiles({ force: true });
+  assert.match(await fs.readFile("AI_POLICY.md", "utf8"), /AI Contribution Policy/);
+} finally {
+  process.chdir(originalCwd);
+  await fs.rm(tempDir, { recursive: true, force: true });
+}
 
 console.log("All tests passed.");

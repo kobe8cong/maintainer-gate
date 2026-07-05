@@ -2,6 +2,22 @@
 
 Maintainer Gate reads `.maintainer-gate.json` by default.
 
+## Bootstrap Policy Files
+
+Use `policy init` to add starter policy files to a repository:
+
+```bash
+maintainer-gate policy init
+```
+
+It creates:
+
+- `.maintainer-gate.json`
+- `AI_POLICY.md`
+- `.github/PULL_REQUEST_TEMPLATE.md`
+
+The command refuses to overwrite existing files. Use `maintainer-gate policy init --force` only when you intentionally want to replace those starter files.
+
 ```json
 {
   "requireLinkedIssue": true,

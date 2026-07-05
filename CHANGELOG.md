@@ -2,6 +2,13 @@
 
 All notable changes to Maintainer Gate will be documented in this file.
 
+## [0.1.3] - 2026-07-05
+
+### Added
+
+- Add `maintainer-gate policy init` to create starter policy files.
+- Add overwrite protection for policy init, with an explicit `--force` mode.
+
 ## [0.1.2] - 2026-06-27
 
 ### Added
