@@ -42,6 +42,7 @@ maintainer-gate --input examples/risky-pr.json --format markdown
 maintainer-gate --input examples/risky-pr.json --format json
 maintainer-gate --input examples/risky-pr.json --require-ai-disclosure
 maintainer-gate --input examples/risky-pr.json --fail-on high
+maintainer-gate policy init
 ```
 
 ## GitHub Actions
@@ -88,6 +89,14 @@ Add `.maintainer-gate.json`:
   "failOn": "high"
 }
 ```
+
+Or bootstrap starter policy files:
+
+```bash
+maintainer-gate policy init
+```
+
+The init command creates `.maintainer-gate.json`, `AI_POLICY.md`, and `.github/PULL_REQUEST_TEMPLATE.md`. It refuses to overwrite existing files unless you pass `--force`.
 
 See [policy configuration](docs/policy.md).
 

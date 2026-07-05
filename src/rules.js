@@ -229,7 +229,7 @@ function summarize(pr, policy, findings) {
   const recommendation = recommendationFor(counts);
   return {
     tool: "maintainer-gate",
-    version: "0.1.2",
+    version: "0.1.3",
     recommendation,
     readiness,
     policy: {

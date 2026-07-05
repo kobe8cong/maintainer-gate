@@ -1,16 +1,21 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { evaluatePullRequest, mergePolicy } from "./rules.js";
+import { defaultPolicy, evaluatePullRequest, mergePolicy } from "./rules.js";
 import { formatReport } from "./reporters.js";
 
 export async function runCli(argv) {
   const options = parseArgs(argv);
   if (options.version) {
-    process.stdout.write("0.1.2\n");
+    process.stdout.write("0.1.3\n");
     return;
   }
   if (options.help) {
     process.stdout.write(helpText());
+    return;
+  }
+  if (options.command === "policy-init") {
+    const result = await initPolicyFiles({ force: options.force });
+    process.stdout.write(`${result.message}\n`);
     return;
   }
 
@@ -42,13 +47,20 @@ export function parseArgs(argv) {
     failOn: envInput("fail-on") ?? null,
     noConfig: false,
     policyOverrides: {},
+    command: null,
+    force: false,
     help: false,
     version: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--input") {
+    if (arg === "policy" && argv[index + 1] === "init") {
+      options.command = "policy-init";
+      index += 1;
+    } else if (arg === "--force") {
+      options.force = true;
+    } else if (arg === "--input") {
       options.inputPath = argv[++index] ?? null;
     } else if (arg === "--config") {
       options.configPath = argv[++index] ?? options.configPath;
@@ -81,7 +93,62 @@ export function parseArgs(argv) {
   if (options.failOn && !["low", "medium", "high", "critical"].includes(options.failOn)) {
     throw new Error("fail-on must be one of: low, medium, high, critical");
   }
+  if (options.force && options.command !== "policy-init") {
+    throw new Error("--force is only supported with policy init");
+  }
   return options;
+}
+
+export async function initPolicyFiles({ force = false } = {}) {
+  const files = policyInitFiles();
+  if (!force) {
+    const existing = [];
+    for (const file of files) {
+      if (await fileExists(file.path)) existing.push(file.path);
+    }
+    if (existing.length > 0) {
+      throw new Error(
+        `policy init would overwrite existing file(s): ${existing.join(", ")}. Re-run with --force to replace them.`,
+      );
+    }
+  }
+
+  for (const file of files) {
+    await fs.mkdir(path.dirname(file.path), { recursive: true });
+    await fs.writeFile(file.path, file.content, "utf8");
+  }
+
+  return {
+    files: files.map((file) => file.path),
+    message: `Created ${files.map((file) => file.path).join(", ")}`,
+  };
+}
+
+function policyInitFiles() {
+  return [
+    {
+      path: ".maintainer-gate.json",
+      content: `${JSON.stringify(defaultPolicy, null, 2)}\n`,
+    },
+    {
+      path: "AI_POLICY.md",
+      content: aiPolicyTemplate(),
+    },
+    {
+      path: path.join(".github", "PULL_REQUEST_TEMPLATE.md"),
+      content: pullRequestTemplate(),
+    },
+  ];
+}
+
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
 }
 
 async function loadInput(inputPath) {
@@ -186,17 +253,20 @@ function helpText() {
 
 Usage:
   maintainer-gate --input pr.json [--format table|markdown|json] [--fail-on high]
+  maintainer-gate policy init [--force]
 
 Examples:
   maintainer-gate --input examples/risky-pr.json
   maintainer-gate --input pr.json --format markdown
   maintainer-gate --input pr.json --require-ai-disclosure
   maintainer-gate --input pr.json --max-files 12 --max-lines 400
+  maintainer-gate policy init
 
 Options:
   --config <file>              Read policy from .maintainer-gate.json.
   --fail-on <severity>         Exit non-zero when findings meet severity.
   --format <format>            table, markdown, or json.
+  --force                      Replace existing policy init files.
   --input <file>               Pull request event or normalized PR JSON.
   --max-files <count>          Maximum changed files before large-PR finding.
   --max-lines <count>          Maximum changed lines before large-PR finding.
@@ -204,5 +274,47 @@ Options:
   --no-linked-issue            Do not require a linked issue.
   --require-ai-disclosure      Require an AI assistance disclosure.
   --version                    Print the current version.
+`;
+}
+
+function aiPolicyTemplate() {
+  return `# AI Contribution Policy
+
+This project accepts AI-assisted contributions when contributors remain accountable for the work.
+
+## Contributor Expectations
+
+- Understand the change you submit.
+- Link the issue or explain the problem before opening a large pull request.
+- Keep pull requests small and focused.
+- Disclose meaningful AI assistance in the pull request body when requested.
+- Run tests and explain any missing test coverage.
+- Do not resubmit maintainer feedback through an AI tool without understanding the result.
+
+## Disclosure Example
+
+\`\`\`markdown
+AI assistance: Used Codex to draft tests after I wrote the implementation. I reviewed and edited the generated code before submitting.
+\`\`\`
+
+Maintainers may ask for more context, request smaller changes, require tests, or close low-context pull requests without deep review.
+`;
+}
+
+function pullRequestTemplate() {
+  return `## Summary
+
+
+## Linked Issue
+
+Fixes #
+
+## Testing
+
+
+## AI Assistance
+
+Disclose meaningful AI assistance, or write "None".
+
 `;
 }
