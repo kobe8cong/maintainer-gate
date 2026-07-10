@@ -5,7 +5,7 @@ A no-drama PR intake gate for maintainers handling AI-assisted open-source contr
 Maintainer Gate does not try to prove a contributor used AI. It checks whether a pull request gives maintainers enough context to be worth review time.
 
 ```bash
-npx maintainer-gate --input examples/risky-pr.json
+node bin/maintainer-gate.js --input examples/risky-pr.json
 ```
 
 ```text
@@ -63,7 +63,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
-      - uses: kobe8cong/maintainer-gate@v0.1.0
+      - uses: kobe8cong/maintainer-gate@v0.1.4
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -97,6 +97,8 @@ maintainer-gate policy init
 ```
 
 The init command creates `.maintainer-gate.json`, `AI_POLICY.md`, and `.github/PULL_REQUEST_TEMPLATE.md`. It refuses to overwrite existing files unless you pass `--force`.
+
+The npm package is not published yet. For local CLI use, clone the repository and run `node bin/maintainer-gate.js`; the GitHub Action is available from the tagged releases.
 
 See [policy configuration](docs/policy.md).
 

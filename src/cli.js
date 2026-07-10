@@ -3,10 +3,12 @@ import path from "node:path";
 import { defaultPolicy, evaluatePullRequest, mergePolicy } from "./rules.js";
 import { formatReport } from "./reporters.js";
 
+const commentMarker = "<!-- maintainer-gate-report -->";
+
 export async function runCli(argv) {
   const options = parseArgs(argv);
   if (options.version) {
-    process.stdout.write("0.1.3\n");
+    process.stdout.write("0.1.4\n");
     return;
   }
   if (options.help) {
@@ -159,7 +161,7 @@ async function loadInput(inputPath) {
   return JSON.parse(await fs.readFile(path.resolve(process.cwd(), resolved), "utf8"));
 }
 
-async function enrichInput(input) {
+export async function enrichInput(input) {
   if (!input.pull_request || input.files?.length || input.pull_request.files?.length) {
     return input;
   }
@@ -170,21 +172,15 @@ async function enrichInput(input) {
     return input;
   }
 
-  const response = await fetch(
+  const files = await fetchPaginated(
     `https://api.github.com/repos/${repository}/pulls/${number}/files?per_page=100`,
-    {
-      headers: {
-        accept: "application/vnd.github+json",
-        authorization: `Bearer ${token}`,
-        "x-github-api-version": "2022-11-28",
-      },
-    },
+    githubHeaders(token),
+    "fetch pull request files",
   );
-  if (!response.ok) return input;
-  return { ...input, files: await response.json() };
+  return { ...input, files };
 }
 
-async function upsertPullRequestComment(input, report) {
+export async function upsertPullRequestComment(input, report) {
   const token = process.env.GITHUB_TOKEN ?? envInput("token");
   const repository = process.env.GITHUB_REPOSITORY;
   const number = input.pull_request?.number ?? input.number;
@@ -192,36 +188,79 @@ async function upsertPullRequestComment(input, report) {
 
   const body = buildPullRequestComment(report);
   const baseUrl = `https://api.github.com/repos/${repository}/issues/${number}/comments`;
-  const headers = {
-    accept: "application/vnd.github+json",
-    authorization: `Bearer ${token}`,
-    "content-type": "application/json",
-    "x-github-api-version": "2022-11-28",
-  };
+  const headers = githubHeaders(token, true);
 
-  const commentsResponse = await fetch(`${baseUrl}?per_page=100`, { headers });
-  if (!commentsResponse.ok) return;
-  const comments = await commentsResponse.json();
-  const existing = comments.find((comment) => comment.body?.includes(marker));
+  const comments = await fetchPaginated(
+    `${baseUrl}?per_page=100`,
+    headers,
+    "list pull request comments",
+  );
+  const existing = comments.find((comment) => comment.body?.includes(commentMarker));
   if (existing) {
-    await fetch(existing.url, {
+    await fetchChecked(existing.url, {
       method: "PATCH",
       headers,
       body: JSON.stringify({ body }),
-    });
+    }, "update pull request comment");
     return;
   }
 
-  await fetch(baseUrl, {
+  await fetchChecked(baseUrl, {
     method: "POST",
     headers,
     body: JSON.stringify({ body }),
-  });
+  }, "create pull request comment");
 }
 
 export function buildPullRequestComment(report) {
-  const marker = "<!-- maintainer-gate-report -->";
-  return `${marker}\n${formatReport(report, "markdown")}`;
+  return `${commentMarker}\n${formatReport(report, "markdown")}`;
+}
+
+async function fetchPaginated(url, headers, operation) {
+  const items = [];
+  let nextUrl = url;
+  while (nextUrl) {
+    const response = await fetchChecked(nextUrl, { headers }, operation);
+    const page = await response.json();
+    if (!Array.isArray(page)) {
+      throw new Error(`GitHub API returned an invalid response while trying to ${operation}`);
+    }
+    items.push(...page);
+    nextUrl = nextLink(response.headers?.get?.("link"));
+  }
+  return items;
+}
+
+async function fetchChecked(url, options, operation) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    throw new Error(`GitHub API failed to ${operation}: ${error.message}`, { cause: error });
+  }
+  if (!response.ok) {
+    const detail = [response.status, response.statusText].filter(Boolean).join(" ");
+    throw new Error(`GitHub API failed to ${operation}${detail ? ` (${detail})` : ""}`);
+  }
+  return response;
+}
+
+function nextLink(linkHeader) {
+  if (!linkHeader) return null;
+  for (const entry of linkHeader.split(",")) {
+    const match = entry.match(/<([^>]+)>;\s*rel="next"/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function githubHeaders(token, includeContentType = false) {
+  return {
+    accept: "application/vnd.github+json",
+    authorization: `Bearer ${token}`,
+    ...(includeContentType ? { "content-type": "application/json" } : {}),
+    "x-github-api-version": "2022-11-28",
+  };
 }
 
 async function loadJsonIfExists(configPath) {
