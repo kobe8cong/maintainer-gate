@@ -2,9 +2,15 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { evaluatePullRequest } from "../src/rules.js";
+import { evaluatePullRequest, mergePolicy } from "../src/rules.js";
 import { formatReport } from "../src/reporters.js";
-import { buildPullRequestComment, initPolicyFiles, parseArgs } from "../src/cli.js";
+import {
+  buildPullRequestComment,
+  enrichInput,
+  initPolicyFiles,
+  parseArgs,
+  upsertPullRequestComment,
+} from "../src/cli.js";
 
 const risky = {
   title: "Improve auth and billing",
@@ -75,6 +81,13 @@ assert.equal(parseArgs(["--input", "pr.json", "--format", "json"]).format, "json
 assert.equal(parseArgs(["policy", "init"]).command, "policy-init");
 assert.equal(parseArgs(["policy", "init", "--force"]).force, true);
 assert.throws(() => parseArgs(["--format", "xml"]), /format must be/);
+assert.throws(() => mergePolicy({ maxChangedFiles: -1 }), /non-negative integer/);
+assert.throws(() => mergePolicy({ maxChangedLines: "600" }), /non-negative integer/);
+assert.throws(() => mergePolicy({ riskyPathSeverity: "urgent" }), /must be one of/);
+assert.throws(
+  () => mergePolicy({ riskyPathGroups: [{ name: "auth", patterns: [] }] }),
+  /patterns must contain/,
+);
 
 const originalCwd = process.cwd();
 const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "maintainer-gate-policy-"));
@@ -104,6 +117,102 @@ try {
 } finally {
   process.chdir(originalCwd);
   await fs.rm(tempDir, { recursive: true, force: true });
+}
+
+const originalFetch = globalThis.fetch;
+const originalToken = process.env.GITHUB_TOKEN;
+const originalRepository = process.env.GITHUB_REPOSITORY;
+try {
+  process.env.GITHUB_TOKEN = "test-token";
+  process.env.GITHUB_REPOSITORY = "example/project";
+
+  const firstPage = Array.from({ length: 100 }, (_, index) => ({
+    filename: `src/file-${index}.js`,
+  }));
+  let fetchCalls = 0;
+  globalThis.fetch = async (url) => {
+    fetchCalls += 1;
+    if (String(url).includes("page=2")) {
+      return mockResponse([{ filename: "src/file-100.js" }]);
+    }
+    return mockResponse(firstPage, {
+      link: '<https://api.github.com/repos/example/project/pulls/42/files?per_page=100&page=2>; rel="next"',
+    });
+  };
+  const enriched = await enrichInput({ pull_request: { number: 42, changed_files: 101 } });
+  assert.equal(enriched.files.length, 101);
+  assert.equal(fetchCalls, 2);
+
+  const requests = [];
+  globalThis.fetch = async (url, options = {}) => {
+    requests.push({ url: String(url), options });
+    if (!options.method) return mockResponse([{ body: "unrelated comment" }]);
+    return mockResponse({ id: 1 });
+  };
+  await upsertPullRequestComment({ pull_request: { number: 42 } }, riskyReport);
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1].options.method, "POST");
+  assert.match(requests[1].options.body, /maintainer-gate-report/);
+
+  requests.length = 0;
+  globalThis.fetch = async (url, options = {}) => {
+    requests.push({ url: String(url), options });
+    if (!options.method) {
+      return mockResponse([
+        {
+          body: "<!-- maintainer-gate-report -->\nold report",
+          url: "https://api.github.com/repos/example/project/issues/comments/7",
+        },
+      ]);
+    }
+    return mockResponse({ id: 7 });
+  };
+  await upsertPullRequestComment({ pull_request: { number: 42 } }, riskyReport);
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1].options.method, "PATCH");
+  assert.match(requests[1].url, /issues\/comments\/7/);
+
+  globalThis.fetch = async () => mockResponse({}, {}, 403, "Forbidden");
+  await assert.rejects(
+    () => enrichInput({ pull_request: { number: 42 } }),
+    /failed to fetch pull request files \(403 Forbidden\)/,
+  );
+
+  globalThis.fetch = async () => {
+    throw new Error("connection reset");
+  };
+  await assert.rejects(
+    () => enrichInput({ pull_request: { number: 42 } }),
+    /failed to fetch pull request files: connection reset/,
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+  restoreEnv("GITHUB_TOKEN", originalToken);
+  restoreEnv("GITHUB_REPOSITORY", originalRepository);
+}
+
+function mockResponse(body, headers = {}, status = 200, statusText = "OK") {
+  const normalizedHeaders = new Map(
+    Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]),
+  );
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText,
+    headers: {
+      get(name) {
+        return normalizedHeaders.get(String(name).toLowerCase()) ?? null;
+      },
+    },
+    async json() {
+      return body;
+    },
+  };
+}
+
+function restoreEnv(name, value) {
+  if (value === undefined) delete process.env[name];
+  else process.env[name] = value;
 }
 
 console.log("All tests passed.");

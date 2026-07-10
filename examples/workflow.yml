@@ -13,7 +13,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
-      - uses: kobe8cong/maintainer-gate@v0.1.0
+      - uses: kobe8cong/maintainer-gate@v0.1.4
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

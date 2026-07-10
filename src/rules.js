@@ -5,6 +5,8 @@ export const severityWeight = {
   low: 1,
 };
 
+const severityLevels = Object.keys(severityWeight);
+
 export const defaultPolicy = {
   requireLinkedIssue: true,
   requireAiDisclosure: false,
@@ -64,11 +66,51 @@ export function evaluatePullRequest(input, policy = {}) {
 }
 
 export function mergePolicy(policy = {}) {
-  return {
+  const merged = {
     ...defaultPolicy,
     ...policy,
     riskyPathGroups: policy.riskyPathGroups ?? defaultPolicy.riskyPathGroups,
   };
+  validatePolicy(merged);
+  return merged;
+}
+
+export function validatePolicy(policy) {
+  for (const field of ["requireLinkedIssue", "requireAiDisclosure"]) {
+    if (typeof policy[field] !== "boolean") {
+      throw new Error(`policy.${field} must be a boolean`);
+    }
+  }
+
+  for (const field of ["maxChangedFiles", "maxChangedLines", "minBodyLength"]) {
+    if (!Number.isInteger(policy[field]) || policy[field] < 0) {
+      throw new Error(`policy.${field} must be a non-negative integer`);
+    }
+  }
+
+  for (const field of ["riskyPathSeverity", "failOn"]) {
+    if (!severityLevels.includes(policy[field])) {
+      throw new Error(`policy.${field} must be one of: ${severityLevels.join(", ")}`);
+    }
+  }
+
+  if (!Array.isArray(policy.riskyPathGroups)) {
+    throw new Error("policy.riskyPathGroups must be an array");
+  }
+  for (const [index, group] of policy.riskyPathGroups.entries()) {
+    if (!group || typeof group.name !== "string" || group.name.trim() === "") {
+      throw new Error(`policy.riskyPathGroups[${index}].name must be a non-empty string`);
+    }
+    if (
+      !Array.isArray(group.patterns) ||
+      group.patterns.length === 0 ||
+      group.patterns.some((pattern) => typeof pattern !== "string" || pattern.trim() === "")
+    ) {
+      throw new Error(
+        `policy.riskyPathGroups[${index}].patterns must contain non-empty strings`,
+      );
+    }
+  }
 }
 
 function normalizePullRequest(input) {
@@ -229,7 +271,7 @@ function summarize(pr, policy, findings) {
   const recommendation = recommendationFor(counts);
   return {
     tool: "maintainer-gate",
-    version: "0.1.3",
+    version: "0.1.4",
     recommendation,
     readiness,
     policy: {

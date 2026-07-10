@@ -18,7 +18,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
-      - uses: kobe8cong/maintainer-gate@v0.1.0
+      - uses: kobe8cong/maintainer-gate@v0.1.4
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -35,7 +35,8 @@ jobs:
 ## Behavior
 
 - The action reads the GitHub event from `GITHUB_EVENT_PATH`.
-- If `GITHUB_TOKEN` is available, it fetches PR file metadata from the GitHub API.
+- If `GITHUB_TOKEN` is available, it fetches every page of PR file metadata from the GitHub API.
+- GitHub API failures stop the check with a clear error instead of silently producing a partial report.
 - Markdown output is appended to the job summary.
 - If `comment: true`, a sticky PR comment is created or updated.
 - Reports include suggested labels for maintainer triage, but the action does not apply labels.

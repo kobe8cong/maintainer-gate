@@ -43,6 +43,8 @@ The command refuses to overwrite existing files. Use `maintainer-gate policy ini
 
 CLI flags override config where applicable.
 
+Configuration is validated before a report runs. Boolean fields must be booleans, numeric thresholds must be non-negative integers, severity fields must use a supported severity, and every risky path group must contain a name and at least one non-empty pattern.
+
 ## Custom Risky Paths
 
 ```json

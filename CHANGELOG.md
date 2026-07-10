@@ -2,6 +2,20 @@
 
 All notable changes to Maintainer Gate will be documented in this file.
 
+## [0.1.4] - 2026-07-10
+
+### Fixed
+
+- Fix sticky PR comment creation and updates failing because the report marker was out of scope.
+- Fetch all changed-file and comment pages instead of inspecting only the first 100 records.
+- Surface GitHub API failures instead of silently skipping file enrichment or comments.
+
+### Added
+
+- Validate policy field types, thresholds, severities, and risky path groups before evaluation.
+- Test paginated GitHub API enrichment, sticky comment creation, API errors, and invalid policies.
+- Run CI across Node.js 18, 20, and 22 with a local GitHub Action smoke test.
+
 ## [0.1.3] - 2026-07-05
 
 ### Added
